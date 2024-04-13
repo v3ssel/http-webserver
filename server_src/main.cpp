@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 
 #include "server.h"
+#include "connection_logger.h"
 
 int main(int argc, char** argv) try {
     std::string kAddress = "127.0.0.1";
@@ -21,7 +22,7 @@ int main(int argc, char** argv) try {
         throw std::invalid_argument("");
     }
     
-    srv::SocketServer srv(kAddress, port);
+    srv::SocketServer srv(kAddress, port, new srv::ConnectionLogger());
     std::cout << "Starting http://" << kAddress << ":" << port << " server.\n";
     srv.Start();
     std::cout << "Server started.\n";

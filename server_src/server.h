@@ -3,6 +3,7 @@
 
 #include <string>
 #include <thread>
+#include "base_connection_logger.h"
 
 namespace srv {
     class SocketServer {
@@ -10,7 +11,7 @@ namespace srv {
         static constexpr int kBacklogSize = 10;
         static constexpr int kBufferSize = 2048;
 
-        SocketServer(const std::string& address = "127.0.0.1", uint16_t port = 8088);
+        SocketServer(const std::string& address = "127.0.0.1", uint16_t port = 8088, BaseConnectionLogger* connection_logger = nullptr);
         ~SocketServer();
 
         void Start();
@@ -25,6 +26,7 @@ namespace srv {
 
         std::string address_;
         uint16_t port_;
+        std::unique_ptr<BaseConnectionLogger> connection_logger_;
 
         int server_fd_;
         bool is_running_;

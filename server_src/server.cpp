@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <cstring>
 #include <cerrno>
+#include <memory>
+
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -10,8 +12,12 @@
 #include "server.h"
 
 namespace srv {
-SocketServer::SocketServer(const std::string &address, uint16_t port)
-    : address_(address), port_(port), server_fd_(0), is_running_(false) {
+SocketServer::SocketServer(const std::string &address, uint16_t port, BaseConnectionLogger* connection_logger)
+    : address_(address)
+    , port_(port)
+    , server_fd_(0)
+    , is_running_(false) {
+    connection_logger_ = std::unique_ptr<BaseConnectionLogger>(connection_logger);
     CreateSocket();
 }
 
@@ -78,11 +84,14 @@ void SocketServer::Listen() {
 
         char buffer[kBufferSize] = {0};
         int valread = read(client_fd, buffer, kBufferSize);
-        std::cout << "----------------GOT----------------\n" << buffer << "\n";
+        // std::cout << "----------------GOT----------------\n" << buffer << "\n";
+        if (connection_logger_) {
+            connection_logger_->LogConnected(buffer);
+        }
 
-        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!\n\n";
+        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello " + std::string(buffer) + "!\n\n";
         send(client_fd, response.c_str(), response.length(), 0);
-        std::cout << "----------------Response sent----------------\n";
+        // std::cout << "----------------Response sent----------------\n";
 
         close(client_fd);
     }
