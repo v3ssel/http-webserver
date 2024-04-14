@@ -1,10 +1,4 @@
 #include <iostream>
-#include <thread>
-#include <unistd.h>
-#include <string>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "server.h"
 #include "connection_logger.h"

@@ -7,8 +7,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <iostream>
-
 #include "server.h"
 
 namespace srv {
@@ -84,14 +82,14 @@ void SocketServer::Listen() {
 
         char buffer[kBufferSize] = {0};
         int valread = read(client_fd, buffer, kBufferSize);
-        // std::cout << "----------------GOT----------------\n" << buffer << "\n";
-        if (connection_logger_) {
-            connection_logger_->LogConnected(buffer);
-        }
 
-        std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello " + std::string(buffer) + "!\n\n";
-        send(client_fd, response.c_str(), response.length(), 0);
-        // std::cout << "----------------Response sent----------------\n";
+        if (connection_logger_) {
+            try {
+                connection_logger_->LogConnected(buffer);
+            } catch (...) {
+                continue;
+            }
+        }
 
         close(client_fd);
     }

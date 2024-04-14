@@ -16,3 +16,4 @@ server:
 	$(CXX) $(CXXFLAGS) $(SERVER_SOURCES) -o server
 
 client:
+	$(CXX) $(CXXFLAGS) $(CLIENT_SOURCES) -o client
