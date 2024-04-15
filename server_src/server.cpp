@@ -53,7 +53,7 @@ void SocketServer::CreateSocket() {
     server_fd_ = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 
     if (server_fd_ == -1) {
-        throw std::runtime_error(std::string("Failed to create socket. ") + strerror(errno));
+        throw std::runtime_error("Failed to create socket. " + std::string(strerror(errno)));
     }
 }
 
@@ -64,17 +64,17 @@ void SocketServer::BindSocket() {
     address.sin_port = htons(port_);
 
     if (inet_pton(AF_INET, address_.c_str(), &(address.sin_addr.s_addr)) != 1) {
-        throw std::runtime_error(std::string("Failed to convert ip address. ") + strerror(errno));
+        throw std::runtime_error("Failed to convert ip address. " + std::string(strerror(errno)));
     }
 
     if (bind(server_fd_, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        throw std::runtime_error(std::string("Failed to bind socket to address and port. ") + strerror(errno));
+        throw std::runtime_error("Failed to bind socket to address and port. " + std::string(strerror(errno)));
     }
 }
 
 void SocketServer::StartListening() {
     if (listen(server_fd_, kBacklogSize) < 0) {
-        throw std::runtime_error(std::string("Failed to start listening. ") + strerror(errno));
+        throw std::runtime_error("Failed to start listening. " + std::string(strerror(errno)));
     }
 }
 
@@ -116,23 +116,21 @@ void SocketServer::ProcessEvents(int current_worker) {
     int worker_fd = worker_fd_[current_worker];
 
     while (is_running_) {
-        int events_num = epoll_wait(worker_fd, worker_events[current_worker], kMaxEvents, 0);
+        int events_ready = epoll_wait(worker_fd, worker_events[current_worker], kMaxEvents, 100);
 
-        if (events_num <= 0) {
+        if (events_ready <= 0) {
             continue;
         }
 
-        for (int i = 0; i < events_num; i++) {
+        for (int i = 0; i < events_ready; i++) {
             epoll_event curr_event = worker_events[current_worker][i];
             int client_fd = curr_event.data.fd;
 
             if (curr_event.events & EPOLLIN) {
                 HandleEpollInEvent(worker_fd, client_fd);
-            }
-            else if (curr_event.events & EPOLLOUT) {
+            } else if (curr_event.events & EPOLLOUT) {
                 HandleEpollOutEvent(worker_fd, client_fd);
             } else {
-                std::cout << "DELETIN\n";
                 epoll_ctl(worker_fd_[current_worker], EPOLL_CTL_DEL, client_fd, nullptr);
                 close(client_fd);
             }
@@ -157,19 +155,20 @@ void SocketServer::HandleEpollInEvent(int epoll_fd, int client_fd) {
         connection_logger_->LogConnected(buffer);
     }
 
-    // epoll_event event;
-    // event.events = EPOLLOUT;
-    // event.data.fd = client_fd;
+    epoll_event event;
+    event.events = EPOLLOUT;
+    event.data.fd = client_fd;
 
-    // if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &event) != 0) {
-    //     throw std::runtime_error("Something wrong with Epoll Ctl in EpollIn. " + std::string(strerror(errno)));
-    // }
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &event) != 0) {
+        throw std::runtime_error("Something wrong with Epoll Ctl in EpollIn. " + std::string(strerror(errno)));
+    }
 }
 
 void SocketServer::HandleEpollOutEvent(int epoll_fd, int client_fd) {
     std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello bpb!\n\n";
     ssize_t bytes_sent = send(client_fd, response.c_str(), response.length(), 0);
     std::cout << "---------------SENT-------------\n";
+    std::cout << response;
 
     epoll_event event;
     event.events = EPOLLIN;

@@ -24,23 +24,23 @@ int main(int argc, char** argv) {
         if (delay < 0 || delay > 7200) throw std::invalid_argument("");
 
         // connect sleep connect sleep
-            int client_fd = socket(AF_INET, SOCK_STREAM, 0);
-            if (client_fd == -1) {
-                throw std::runtime_error("Cannot create client socket. " + std::string(strerror(errno)) + "\n");
-            }
+        int client_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (client_fd == -1) {
+            throw std::runtime_error("Cannot create client socket. " + std::string(strerror(errno)) + "\n");
+        }
 
-            sockaddr_in address;
-            address.sin_family = AF_INET;
-            address.sin_addr.s_addr = INADDR_ANY;
-            address.sin_port = htons(port);
-            
-            if (inet_pton(AF_INET, kAddress.c_str(), &address.sin_addr.s_addr) <= 0) {
-                throw std::runtime_error("Invalid ip address. " + std::string(strerror(errno)) + "\n");
-            }
+        sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port);
+        
+        if (inet_pton(AF_INET, kAddress.c_str(), &address.sin_addr.s_addr) <= 0) {
+            throw std::runtime_error("Invalid ip address. " + std::string(strerror(errno)) + "\n");
+        }
 
-            if (connect(client_fd, (sockaddr*)&address, sizeof(address)) == -1) {
-                throw std::runtime_error("Cannot establish connection with http://" + kAddress + ":" + std::to_string(port) + ". " + std::string(strerror(errno)) + "\n");
-            }
+        if (connect(client_fd, (sockaddr*)&address, sizeof(address)) == -1) {
+            throw std::runtime_error("Cannot establish connection with http://" + kAddress + ":" + std::to_string(port) + ". " + std::string(strerror(errno)) + "\n");
+        }
                 
         while (true) {
             int sent = send(client_fd, client_name.c_str(), client_name.length(), 0);

@@ -6,6 +6,7 @@
 namespace srv {
 class BaseConnectionLogger {
    public:
+    virtual ~BaseConnectionLogger() = default;
     virtual void LogConnected(const std::string& client_name) = 0;
 };
 }
