@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
         if (delay < 0 || delay > 7200) throw std::invalid_argument("");
 
         // connect sleep connect sleep
-        while (true) {
             int client_fd = socket(AF_INET, SOCK_STREAM, 0);
             if (client_fd == -1) {
                 throw std::runtime_error("Cannot create client socket. " + std::string(strerror(errno)) + "\n");
@@ -43,14 +42,16 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Cannot establish connection with http://" + kAddress + ":" + std::to_string(port) + ". " + std::string(strerror(errno)) + "\n");
             }
                 
+        while (true) {
             int sent = send(client_fd, client_name.c_str(), client_name.length(), 0);
             if (sent != client_name.length()) {
                 std::cout << "Error in data sending. Trying again.\n";
             }
-            close(client_fd);
 
             std::this_thread::sleep_for(std::chrono::seconds(delay));
         }
+
+        close(client_fd);
 
     } catch (std::invalid_argument) {
         std::cout << "Invalid port or delay number.";

@@ -101,26 +101,14 @@ void SocketServer::Listen() {
 
         epoll_event event;
         event.events = EPOLLIN;
-        event.data.ptr = new int(client_fd);
+        event.data.fd = client_fd;
 
         if (epoll_ctl(worker_fd_[current_worker], EPOLL_CTL_ADD, client_fd, &event) != 0) {
             throw std::runtime_error("Cannot create epoll. " + std::string(strerror(errno)));
         }
+
         current_worker++;
         if (current_worker == kMaxWorkers) current_worker = 0;
-
-        // char buffer[kBufferSize] = {0};
-        // int valread = read(client_fd, buffer, kBufferSize);
-
-        // if (connection_logger_) {
-        //     try {
-        //         connection_logger_->LogConnected(buffer);
-        //     } catch (...) {
-        //         continue;
-        //     }
-        // }
-
-        // close(client_fd);
     }
 }
 
@@ -134,26 +122,19 @@ void SocketServer::ProcessEvents(int current_worker) {
             continue;
         }
 
-        std::cout << "GOT EVENTS: " << events_num << "\n";
-
         for (int i = 0; i < events_num; i++) {
             epoll_event curr_event = worker_events[current_worker][i];
-            int* client_fd = reinterpret_cast<int*>(curr_event.data.ptr);
+            int client_fd = curr_event.data.fd;
 
             if (curr_event.events & EPOLLIN) {
-                HandleEpollInEvent(worker_fd, *client_fd);
-                close(*client_fd);
-                delete client_fd;
+                HandleEpollInEvent(worker_fd, client_fd);
             }
-            // else if (curr_event.events & EPOLLOUT) {
-            //     HandleEpollOutEvent(worker_fd, *client_fd);
-            //     close(*client_fd);
-            //     delete client_fd;
-            // } 
-            else {
-                epoll_ctl(worker_fd_[current_worker], EPOLL_CTL_DEL, *client_fd, nullptr);
-                close(*client_fd);
-                delete client_fd;
+            else if (curr_event.events & EPOLLOUT) {
+                HandleEpollOutEvent(worker_fd, client_fd);
+            } else {
+                std::cout << "DELETIN\n";
+                epoll_ctl(worker_fd_[current_worker], EPOLL_CTL_DEL, client_fd, nullptr);
+                close(client_fd);
             }
         }
     }
@@ -162,17 +143,26 @@ void SocketServer::ProcessEvents(int current_worker) {
 void SocketServer::HandleEpollInEvent(int epoll_fd, int client_fd) {
     char buffer[kBufferSize] = {0};
     ssize_t bytes_recv = recv(client_fd, buffer, kBufferSize, 0);
-    std::cout << "---------------GOT-------------\n" << buffer << "\n";
     
+    if (bytes_recv == 0) {
+        std::cout << "---------------DISCONNECTED-------------\n";
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr);
+        close(client_fd);
+        return;
+    }
+
+    std::cout << "---------------GOT-------------\n" << buffer << "\n";
+
     if (connection_logger_) {
         connection_logger_->LogConnected(buffer);
     }
+
     // epoll_event event;
     // event.events = EPOLLOUT;
-    // event.data.ptr = new int(client_fd);
+    // event.data.fd = client_fd;
 
     // if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &event) != 0) {
-    //     throw std::runtime_error("Something wrong Epoll Ctl in EpollIn. " + std::string(strerror(errno)));
+    //     throw std::runtime_error("Something wrong with Epoll Ctl in EpollIn. " + std::string(strerror(errno)));
     // }
 }
 
@@ -183,10 +173,10 @@ void SocketServer::HandleEpollOutEvent(int epoll_fd, int client_fd) {
 
     epoll_event event;
     event.events = EPOLLIN;
-    event.data.ptr = new int(client_fd);
+    event.data.fd = client_fd;
 
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &event) != 0) {
-        throw std::runtime_error("Something wrong Epoll Ctl in EpollOut. " + std::string(strerror(errno)));
+        throw std::runtime_error("Something wrong with Epoll Ctl in EpollOut. " + std::string(strerror(errno)));
     }
 }
 }
