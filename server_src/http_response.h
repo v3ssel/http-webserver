@@ -6,7 +6,12 @@
 namespace srv {
     class HttpResponse : public HttpMessage {
        public:
+        static HttpResponse Parse(const std::string& response_string);
+
         virtual std::string Build() override;
+
+        uint16_t GetStatusCode() const;
+        std::string GetStatusCodeMean() const;
 
        protected:
         uint16_t status_code_;

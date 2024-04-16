@@ -10,10 +10,19 @@ SERVER_SOURCES = \
 CLIENT_SOURCES = \
 	$(PROJECTDIR)/client_src/main.cpp \
 
-.PHONY: server client
+HTTP_SOURCES = \
+	$(PROJECTDIR)/tests/http_message_tests.cpp \
+	$(PROJECTDIR)/server_src/http_message.cpp \
+	$(PROJECTDIR)/server_src/http_request.cpp \
+	$(PROJECTDIR)/server_src/http_response.cpp \
+
+.PHONY: server client tests
 
 server:
 	$(CXX) $(CXXFLAGS) $(SERVER_SOURCES) -o server
 
 client:
 	$(CXX) $(CXXFLAGS) $(CLIENT_SOURCES) -o client
+
+http_tests:
+	$(CXX) $(CXXFLAGS) $(HTTP_SOURCES) -lgtest -o http_test

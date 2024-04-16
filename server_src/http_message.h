@@ -29,7 +29,13 @@ namespace srv {
         std::string GetBody() const;
         self& EraseBody();
 
+        static std::string HttpVersionToString(HttpVersion version);
+        static HttpVersion StringToHttpVersion(const std::string& version_str);
+
        protected:
+        std::string HeadersToString() const;
+        void ParseHeadersString(const std::string& headers);
+
         HttpVersion version_;
         std::unordered_map<std::string, std::string> headers_;
 

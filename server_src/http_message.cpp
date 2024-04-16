@@ -60,4 +60,67 @@ typename HttpMessage::self& HttpMessage::EraseBody() {
     
     return *this;
 }
+
+std::string HttpMessage::HttpVersionToString(HttpVersion version) {
+    std::string version_str = "HTTP/";
+
+    if (version == HttpVersion::HTTP_3_0) {
+        version_str += "3.0";
+    } else if (version == HttpVersion::HTTP_2_0) {
+        version_str += "2.0";
+    } else if (version == HttpVersion::HTTP_1_1) {
+        version_str += "1.1";
+    } else if (version == HttpVersion::HTTP_1_0) {
+        version_str += "1.0";
+    } else {
+        version_str += "0.9";
+    }
+
+    return version_str;
+}
+
+HttpVersion HttpMessage::StringToHttpVersion(const std::string& version_str) {
+    if (version_str.length() <= 7) return HttpVersion::HTTP_1_1;
+
+    if (version_str[5] == '3' && version_str[7] == '0') {
+        return HttpVersion::HTTP_3_0;
+    } else if (version_str[5] == '2' && version_str[7] == '0') {
+        return HttpVersion::HTTP_2_0;
+    } else if (version_str[5] == '1' && version_str[7] == '1') {
+        return HttpVersion::HTTP_1_1;
+    } else if (version_str[5] == '1' && version_str[7] == '0') {
+        return HttpVersion::HTTP_1_0;
+    } else if (version_str[5] == '0' && version_str[7] == '9') {
+        return HttpVersion::HTTP_0_9;
+    }
+
+    return HttpVersion::HTTP_1_1;
+}
+
+std::string HttpMessage::HeadersToString() const {
+    std::string output;
+    
+    for (auto& header : headers_) {
+        output += header.first + ": " + header.second + "\n";
+    }
+
+    return output;
+}
+
+void HttpMessage::ParseHeadersString(const std::string &headers) {
+    for (size_t i = 0; i < headers.length();) {
+        size_t line_ends = headers.find('\n', i);
+        size_t separator = headers.find(':', i);
+
+        std::string header = headers.substr(i, separator - i);
+        std::string value = headers.substr(separator + 1, line_ends - separator - 1);
+        
+        // trim value string
+        value.erase(0, value.find_first_not_of(' '));
+        value.erase(value.find_last_not_of(' ') + 1);
+
+        AddHeader(header, value);
+        i = line_ends + 1;
+    }
+}
 }
