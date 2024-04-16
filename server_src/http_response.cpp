@@ -33,7 +33,19 @@ uint16_t HttpResponse::GetStatusCode() const {
     return status_code_;
 }
 
+typename HttpResponse::self_pointer HttpResponse::SetStatusCode(uint16_t status_code) {
+    status_code_ = status_code;
+
+    return this;
+}
+
 std::string HttpResponse::GetStatusCodeMean() const {
     return status_code_mean_;
+}
+
+typename HttpResponse::self_pointer HttpResponse::SetStatusCodeMean(const std::string &status_code_mean) {
+    status_code_mean_ = status_code_mean;
+
+    return this;
 }
 }

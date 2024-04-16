@@ -42,7 +42,19 @@ std::string HttpRequest::GetHttpMethod() const {
     return http_method_;
 }
 
+HttpRequest::self_pointer HttpRequest::SetHttpMethod(const std::string& method) {
+    http_method_ = method;
+    
+    return this;
+}
+
 std::string HttpRequest::GetRequestedResource() const {
     return resource_;
+}
+
+HttpRequest::self_pointer HttpRequest::SetResource(const std::string &resource) {
+    resource_ = resource;
+    
+    return this;
 }
 }

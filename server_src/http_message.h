@@ -9,25 +9,26 @@ namespace srv {
     class HttpMessage {
        public:
         using self = HttpMessage;
+        using self_pointer = self*;
 
         HttpMessage(HttpVersion version = HttpVersion::HTTP_1_1);
         virtual ~HttpMessage() = default;
 
         virtual std::string Build() = 0;
 
-        self& AddHeader(const std::string& key, const std::string& value = "");
-        self& RemoveHeader(const std::string& key);
+        self_pointer AddHeader(const std::string& key, const std::string& value = "");
+        self_pointer RemoveHeader(const std::string& key);
 
         std::unordered_map<std::string, std::string> GetHeaders() const;
         std::string GetHeaderValue(const std::string& key) const;
-        self& UpdateHeader(const std::string& key, const std::string& new_value);
+        self_pointer UpdateHeader(const std::string& key, const std::string& new_value);
 
-        self& SetHttpVersion(HttpVersion version);
+        self_pointer SetHttpVersion(HttpVersion version);
         HttpVersion GetHttpVersion() const;
 
-        self& SetBody(const std::string& body, const std::string& content_type);
+        self_pointer SetBody(const std::string& body, const std::string& content_type);
         std::string GetBody() const;
-        self& EraseBody();
+        self_pointer EraseBody();
 
         static std::string HttpVersionToString(HttpVersion version);
         static HttpVersion StringToHttpVersion(const std::string& version_str);
