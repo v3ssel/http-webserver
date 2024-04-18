@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "server.h"
+#include "tcp_server.h"
 #include "connection_logger.h"
 
 int main(int argc, char** argv) try {
@@ -16,7 +16,7 @@ int main(int argc, char** argv) try {
         throw std::invalid_argument("");
     }
     
-    srv::SocketServer srv(kAddress, port, new srv::ConnectionLogger());
+    srv::TcpServer srv(kAddress, port);
     std::cout << "Starting http://" << kAddress << ":" << port << " server.\n";
     srv.Start();
     std::cout << "Server started.\n";
@@ -28,7 +28,7 @@ int main(int argc, char** argv) try {
     }
     
     std::cout << "Shutting down the server.\n";
-    srv.Close();
+    srv.Stop();
     std::cout << "Server successfully exit.\n";
 
 } catch (std::invalid_argument&) {

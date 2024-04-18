@@ -22,6 +22,9 @@ std::unordered_map<std::string, std::string> HttpMessage::GetHeaders() const {
 }
 
 std::string HttpMessage::GetHeaderValue(const std::string &key) const {
+    if (headers_.count(key) == 0)
+        return "";
+
     return headers_.at(key);
 }
 

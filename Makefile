@@ -2,9 +2,9 @@ CXX = g++
 CXXFLAGS = -std=c++17
 PROJECTDIR = $(CURDIR)
 
-SERVER_SOURCES = \
+TCP_SERVER_SOURCES = \
 	$(PROJECTDIR)/server_src/main.cpp \
-	$(PROJECTDIR)/server_src/server.cpp \
+	$(PROJECTDIR)/server_src/tcp_server.cpp \
 	$(PROJECTDIR)/server_src/connection_logger.cpp
 
 CLIENT_SOURCES = \
@@ -18,10 +18,10 @@ HTTP_SOURCES = \
 BINDER_SOURCES = \
 	$(PROJECTDIR)/server_src/resource_binder.cpp
 
-.PHONY: server client http_tests binder_tests
+.PHONY: tcp_server client http_tests binder_tests
 
-server:
-	$(CXX) $(CXXFLAGS) $(SERVER_SOURCES) -o server
+tcp_server:
+	$(CXX) $(CXXFLAGS) $(TCP_SERVER_SOURCES) -o server
 
 client:
 	$(CXX) $(CXXFLAGS) $(CLIENT_SOURCES) -o client
