@@ -5,19 +5,20 @@
 
 namespace srv {
 HttpServer::HttpServer(const std::string &address, uint16_t port) {
-    server_ = std::make_unique<TcpServer>(address, port, this);
+    server_ = std::make_unique<TcpServer>(this, address, port);
     binder_ = std::make_unique<ResourceBinder>();
     connection_logger_ = nullptr;
 }
 
-std::string HttpServer::RequestHappen(const std::string &request_str) {
+std::string HttpServer::RequestHappen(const std::string &request_str, const std::string& client) {
     HttpRequest request = HttpRequest::Parse(request_str);
 
     if (connection_logger_) {
-        connection_logger_->LogConnected(request.GetHeaderValue("User-Agent"));
+        connection_logger_->LogConnected(client);
     }
     
-    return binder_->Execute(request).Build();
+    srv::HttpResponse response = binder_->Execute(request);
+    return response.Build();
 }
 
 void HttpServer::Start() {

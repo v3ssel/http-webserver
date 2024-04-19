@@ -11,11 +11,12 @@
 #include <iostream>
 
 namespace srv {
-TcpServer::TcpServer(const std::string &address, uint16_t port, RequestObserver* obsvr)
+TcpServer::TcpServer(RequestObserver* primary_obsvr, const std::string &address, uint16_t port)
     : address_(address)
     , port_(port)
     , server_fd_(0)
-    , is_running_(false) {
+    , is_running_(false)
+    , primary_observer_(primary_obsvr) {
     CreateSocket();
 }
 
@@ -46,6 +47,23 @@ void TcpServer::Stop() {
         close(worker_fd_[i]);
     }
     close(server_fd_);
+}
+
+void TcpServer::SetPrimaryObserver(RequestObserver *obsvr) {
+    primary_observer_ = obsvr;
+}
+
+void TcpServer::AddObserver(RequestObserver *obsvr) {
+    observers_.push_back(obsvr);
+}
+
+void TcpServer::RemoveObserver(RequestObserver *obsvr) {
+    for (auto it = observers_.begin(); it != observers_.end(); it++) {
+        if (*it == obsvr) {
+            observers_.erase(it);
+            break;
+        }
+    }
 }
 
 void TcpServer::CreateSocket() {
@@ -141,6 +159,10 @@ void TcpServer::ProcessEvents(int current_worker) {
 void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
     char buffer[kBufferSize] = {0};
     ssize_t bytes_recv = recv(event_data->client_fd, buffer, kBufferSize, 0);
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return;
+    }
     
     if (bytes_recv == 0) {
         std::cout << "---------------DISCONNECTED-------------\n";
@@ -151,22 +173,20 @@ void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
         return;
     }
 
-    std::cout << "---------------GOT-------------\n"
-              << buffer << "\n";
+    // std::cout << "---------------GOT-------------\n" << buffer << "\n";
 
-    sockaddr_in client_addr;
-    socklen_t client_addr_size = sizeof(client_addr);
-    getpeername(event_data->client_fd, (sockaddr*)&client_addr, &client_addr_size);
+    std::string client_ip = GetClientIp(event_data->client_fd);
 
-    char client_ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
-    std::cout << "CLIENT IP: " << client_ip << "\n";
+
+    event_data->buffer = primary_observer_->RequestHappen(buffer, client_ip);
+    // event_data->buffer = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello bpb!\n\n";
+
+    for (auto obsvr : observers_) {
+        obsvr->RequestHappen(buffer, client_ip);
+    }
 
     epoll_event event;
     event.events = EPOLLOUT;
-
-    // event_data->buffer = observer_ ? observer_->RequestHappen(buffer) : "";
-    event_data->buffer = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello bpb!\n\n";
     event.data.ptr = event_data;
 
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, event_data->client_fd, &event) != 0) {
@@ -176,8 +196,20 @@ void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
 
 void TcpServer::HandleEpollOutEvent(int epoll_fd, EpollEventData* event_data) {
     ssize_t bytes_sent = send(event_data->client_fd, event_data->buffer.c_str(), event_data->buffer.length(), 0);
-    std::cout << "---------------SENT-------------\n";
-    std::cout << event_data->buffer;
+    // std::cout << "---------------SENT-------------\n";
+    // std::cout << event_data->buffer;
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        epoll_event event;
+        event.events = EPOLLOUT;
+        event.data.ptr = event_data;
+
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_data->client_fd, &event) != 0) {
+            throw std::runtime_error("Cannot create epoll. " + std::string(strerror(errno)));
+        }
+        
+        return;
+    }
 
     epoll_event event;
     event.events = EPOLLIN;
@@ -190,7 +222,13 @@ void TcpServer::HandleEpollOutEvent(int epoll_fd, EpollEventData* event_data) {
     }
 }
 
-void TcpServer::SetObserver(RequestObserver *obsvr) {
-    observer_ = obsvr;
+std::string TcpServer::GetClientIp(int client_fd) {
+    sockaddr_in client_addr;
+    socklen_t client_addr_size = sizeof(client_addr);
+    getpeername(client_fd, (sockaddr*)&client_addr, &client_addr_size);
+    char client_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
+
+    return client_ip;
 }
 }

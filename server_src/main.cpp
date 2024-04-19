@@ -1,7 +1,16 @@
 #include <iostream>
 
-#include "tcp_server.h"
+#include "http_server.h"
 #include "connection_logger.h"
+
+srv::HttpResponse GetHome(const srv::HttpRequest request) {
+    std::string name = request.ContainsHeader("Name") ? request.GetHeaderValue("Name") : "World";
+
+    std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 1\n\nHello ";
+    response += name + "!";
+
+    return srv::HttpResponse::Parse(response);
+}
 
 int main(int argc, char** argv) try {
     std::string kAddress = "127.0.0.1";
@@ -16,7 +25,11 @@ int main(int argc, char** argv) try {
         throw std::invalid_argument("");
     }
     
-    srv::TcpServer srv(kAddress, port);
+    // srv::TcpServer srv(nullptr, kAddress, port);
+    srv::HttpServer srv(kAddress, port);
+
+    srv.Bind("/", "GET", GetHome);
+
     std::cout << "Starting http://" << kAddress << ":" << port << " server.\n";
     srv.Start();
     std::cout << "Server started.\n";

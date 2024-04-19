@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include "http_request.h"
 
 namespace srv {
@@ -17,7 +18,8 @@ HttpRequest HttpRequest::Parse(const std::string &request_string) {
 
     parsed.ParseHeadersString(request_string.substr(first_line_ends + 1, header_ends - first_line_ends));
 
-    parsed.body_ = request_string.substr(header_ends + 2);
+    parsed.SetBody(request_string.substr(header_ends + 2),
+                   parsed.ContainsHeader("Content-Type") ? parsed.GetHeaderValue("Content-Type") : "text/plain");
 
     return parsed;
 }

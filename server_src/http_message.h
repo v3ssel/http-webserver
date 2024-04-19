@@ -19,6 +19,7 @@ namespace srv {
         self_pointer AddHeader(const std::string& key, const std::string& value = "");
         self_pointer RemoveHeader(const std::string& key);
 
+        bool ContainsHeader(const std::string& key) const;
         std::unordered_map<std::string, std::string> GetHeaders() const;
         std::string GetHeaderValue(const std::string& key) const;
         self_pointer UpdateHeader(const std::string& key, const std::string& new_value);

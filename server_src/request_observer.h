@@ -6,7 +6,7 @@
 namespace srv {
     class RequestObserver {
        public:
-        virtual std::string RequestHappen(const std::string& request) = 0;
+        virtual std::string RequestHappen(const std::string& request, const std::string& client) = 0;
         virtual ~RequestObserver() = default;
     };
 } // namespace srv

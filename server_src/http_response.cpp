@@ -15,7 +15,8 @@ HttpResponse HttpResponse::Parse(const std::string &response_string) {
     size_t header_ends = response_string.find("\n\n");
     parsed.ParseHeadersString(response_string.substr(first_line_ends + 1, header_ends - first_line_ends));
 
-    parsed.body_ = response_string.substr(header_ends + 2);
+    parsed.SetBody(response_string.substr(header_ends + 2), 
+                   parsed.ContainsHeader("Content-Type") ? parsed.GetHeaderValue("Content-Type") : "text/plain");
 
     return parsed;
 }

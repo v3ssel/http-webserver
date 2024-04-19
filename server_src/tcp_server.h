@@ -3,10 +3,10 @@
 
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <sys/epoll.h>
 
-#include "base_connection_logger.h"
 #include "request_observer.h"
 
 namespace srv {
@@ -15,19 +15,22 @@ namespace srv {
             int client_fd;
             std::string buffer;
         };
+
        public:
         static constexpr int kBacklogSize = 10;
         static constexpr int kBufferSize = 8192;
         static constexpr int kMaxWorkers = 10;
         static constexpr int kMaxEvents = 10000;
 
-        TcpServer(const std::string& address = "127.0.0.1", uint16_t port = 8088, RequestObserver* obsvr = nullptr);
+        TcpServer(RequestObserver* primary_obsvr, const std::string& address = "127.0.0.1", uint16_t port = 8088);
         ~TcpServer();
 
         void Start();
         void Stop();
 
-        void SetObserver(RequestObserver* obsvr);
+        void SetPrimaryObserver(RequestObserver* obsvr);
+        void AddObserver(RequestObserver* obsvr);
+        void RemoveObserver(RequestObserver* obsvr);
 
        private:
         void CreateSocket();
@@ -41,9 +44,10 @@ namespace srv {
         void HandleEpollInEvent(int epoll_fd, EpollEventData* event_data);
         void HandleEpollOutEvent(int epoll_fd, EpollEventData* event_data);
 
+        std::string GetClientIp(int client_fd);
+
         std::string address_;
         uint16_t port_;
-        std::unique_ptr<BaseConnectionLogger> connection_logger_;
 
         int server_fd_;
         bool is_running_;
@@ -54,7 +58,8 @@ namespace srv {
         std::thread workers_[kMaxWorkers];
         epoll_event worker_events[kMaxWorkers][kMaxEvents];
 
-        RequestObserver* observer_;
+        RequestObserver* primary_observer_;
+        std::vector<RequestObserver*> observers_;
     };
 }
 

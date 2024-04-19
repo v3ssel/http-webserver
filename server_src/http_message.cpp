@@ -17,6 +17,10 @@ typename HttpMessage::self_pointer HttpMessage::RemoveHeader(const std::string &
     return this;
 }
 
+bool HttpMessage::ContainsHeader(const std::string &key) const {
+    return headers_.count(key) > 0;
+}
+
 std::unordered_map<std::string, std::string> HttpMessage::GetHeaders() const {
     return headers_;
 }
@@ -46,8 +50,12 @@ HttpVersion HttpMessage::GetHttpVersion() const {
 
 typename HttpMessage::self_pointer HttpMessage::SetBody(const std::string &body, const std::string& content_type) {
     body_ = body;
-    AddHeader("Content-Type", content_type);
-    AddHeader("Content-Length", std::to_string(body.length()));
+    if (!body_.empty() && body_.back() != '\n') {
+        body_ += "\n";
+    }
+
+    UpdateHeader("Content-Type", content_type);
+    UpdateHeader("Content-Length", std::to_string(body_.length()));
 
     return this;
 }
@@ -113,14 +121,16 @@ std::string HttpMessage::HeadersToString() const {
 void HttpMessage::ParseHeadersString(const std::string &headers) {
     for (size_t i = 0; i < headers.length();) {
         size_t line_ends = headers.find('\n', i);
+        if (line_ends == std::string::npos) break;
+
         size_t separator = headers.find(':', i);
 
-        std::string header = headers.substr(i, separator - i);
-        std::string value = headers.substr(separator + 1, line_ends - separator - 1);
+        std::string header = headers.substr(i, separator - i) + "\0";
+        std::string value = headers.substr(separator + 1, line_ends - separator - 1) + "\0";
         
         // trim value string
-        value.erase(0, value.find_first_not_of(' '));
-        value.erase(value.find_last_not_of(' ') + 1);
+        value.erase(0, value.find_first_not_of(" \r\n\t"));
+        value.erase(value.find_last_not_of(" \r\n\t") + 1);
 
         AddHeader(header, value);
         i = line_ends + 1;

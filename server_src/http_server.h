@@ -11,7 +11,7 @@ namespace srv {
        public:
         HttpServer(const std::string& address, uint16_t port);
         
-        std::string RequestHappen(const std::string& request) override;
+        std::string RequestHappen(const std::string& request, const std::string& client) override;
 
         void Start();
         void Stop();
