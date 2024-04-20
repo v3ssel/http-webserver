@@ -11,7 +11,7 @@ TEST(ResourceBinder, Bind) {
                ->SetStatusCode(200)
                ->AddHeader("Custom", "HeaderValue")
                ->SetHttpVersion(r.GetHttpVersion())
-               ->SetBody("Hello " + r.GetBody() + "!", "text/plain");
+               ->SetBody("Hello " + r.GetBody().substr(0, r.GetBody().length() - 1) + "!", "text/plain");
 
         return response;
     });
@@ -24,7 +24,7 @@ TEST(ResourceBinder, Bind) {
 
     srv::HttpResponse response = binder.Execute(request);
     EXPECT_EQ(response.GetHttpVersion(), request.GetHttpVersion());
-    EXPECT_EQ(response.GetBody(), "Hello Joe!");
+    EXPECT_EQ(response.GetBody(), "Hello Joe!\n");
     EXPECT_EQ(response.GetStatusCode(), 200);
     EXPECT_EQ(response.GetStatusCodeMean(), "Ok");
     EXPECT_EQ(response.GetHeaderValue("Custom"), "HeaderValue");
@@ -41,7 +41,7 @@ TEST(ResourceBinder, DefaultErrorHandler) {
 
     srv::HttpResponse response = binder.Execute(request);
     EXPECT_EQ(response.GetHttpVersion(), request.GetHttpVersion());
-    EXPECT_EQ(response.GetBody(), "Default error handler invoked on [GET] \'/\' with HTTP error code 404.");
+    EXPECT_EQ(response.GetBody(), "Default error handler invoked on [GET] \'/\' with HTTP error code 404.\n");
     EXPECT_EQ(response.GetStatusCode(), 404);
     EXPECT_EQ(response.GetStatusCodeMean(), "Not Found");
     EXPECT_EQ(response.GetHeaderValue("Content-Type"), "text/plain");
@@ -52,7 +52,7 @@ TEST(ResourceBinder, DefaultErrorHandler) {
     response = binder.Execute(request);
 
     EXPECT_EQ(response.GetHttpVersion(), request.GetHttpVersion());
-    EXPECT_EQ(response.GetBody(), "Default error handler invoked on [GET] \'/\' with HTTP error code 405.");
+    EXPECT_EQ(response.GetBody(), "Default error handler invoked on [GET] \'/\' with HTTP error code 405.\n");
     EXPECT_EQ(response.GetStatusCode(), 405);
     EXPECT_EQ(response.GetStatusCodeMean(), "Method Not Allowed");
     EXPECT_EQ(response.GetHeaderValue("Content-Type"), "text/plain");
@@ -88,7 +88,7 @@ TEST(ResourceBinder, CustomErrorHandler) {
     srv::HttpResponse response = binder.Execute(request);
 
     EXPECT_EQ(response.GetHttpVersion(), request.GetHttpVersion());
-    EXPECT_EQ(response.GetBody(), "It's okay :)");
+    EXPECT_EQ(response.GetBody(), "It's okay :)\n");
     EXPECT_EQ(response.GetStatusCode(), 200);
     EXPECT_EQ(response.GetStatusCodeMean(), "Ok");
     EXPECT_EQ(response.GetHeaderValue("Content-Type"), "text/plain");
@@ -97,7 +97,7 @@ TEST(ResourceBinder, CustomErrorHandler) {
     response = binder.Execute(request);
 
     EXPECT_EQ(response.GetHttpVersion(), request.GetHttpVersion());
-    EXPECT_EQ(response.GetBody(), "It's not okay.");
+    EXPECT_EQ(response.GetBody(), "It's not okay.\n");
     EXPECT_EQ(response.GetStatusCode(), 404);
     EXPECT_EQ(response.GetStatusCodeMean(), "Very bad");
     EXPECT_EQ(response.GetHeaderValue("Content-Type"), "text/plain");

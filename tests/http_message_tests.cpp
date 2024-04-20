@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../server_src/http_request.h"
-#include "../server_src/http_response.h"
+#include "../http/http_request.h"
+#include "../http/http_response.h"
 
 TEST(HttpRequest, Parse) {
     std::string request = 
@@ -9,7 +9,7 @@ TEST(HttpRequest, Parse) {
         "Host: example.com\n"
         "User-Agent: curl/7.81.0\n"
         "Accept: */*\n"
-        "Content-Length: 4\n"
+        "Content-Length: 1\n"
         "Content-Type: application/x-www-form-urlencoded\n\n"
         "{\"somedata\":\"and_its_value\"}";
     
@@ -23,9 +23,9 @@ TEST(HttpRequest, Parse) {
     EXPECT_EQ(headers["Host"], "example.com");
     EXPECT_EQ(headers["User-Agent"], "curl/7.81.0");
     EXPECT_EQ(headers["Accept"], "*/*");
-    EXPECT_EQ(headers["Content-Length"], "4");
+    EXPECT_EQ(headers["Content-Length"], "29");
     EXPECT_EQ(headers["Content-Type"], "application/x-www-form-urlencoded");
-    EXPECT_EQ(parsed.GetBody(), "{\"somedata\":\"and_its_value\"}");
+    EXPECT_EQ(parsed.GetBody(), "{\"somedata\":\"and_its_value\"}\n");
 }
 
 TEST(HttpRequest, Build) {
@@ -77,7 +77,7 @@ TEST(HttpResponse, Parse) {
         "\t<body>\n"
         "\t\t<h1>400 - Bad Request</h1>\n"
         "\t</body>\n"
-        "</html>";
+        "</html>\n";
 
     srv::HttpResponse parsed = srv::HttpResponse::Parse(response_str + response_body);
 
@@ -87,7 +87,7 @@ TEST(HttpResponse, Parse) {
 
     auto headers = parsed.GetHeaders();
     EXPECT_EQ(headers["Content-Type"], "text/html");
-    EXPECT_EQ(headers["Content-Length"], "349");
+    EXPECT_EQ(headers["Content-Length"], "341");
     EXPECT_EQ(headers["Date"], "Mon, 15 Apr 2024 19:58:19 GMT");
     EXPECT_EQ(headers["Server"], "ECSF (sed/58CC)");
     EXPECT_EQ(parsed.GetBody(), response_body);
