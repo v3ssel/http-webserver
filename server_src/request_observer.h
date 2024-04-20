@@ -11,5 +11,4 @@ namespace srv {
     };
 } // namespace srv
 
-
 #endif  //  _REQUEST_OBSERVER_H_

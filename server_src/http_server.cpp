@@ -1,7 +1,7 @@
 #include "http_server.h"
 
-#include "http_request.h"
-#include "http_response.h"
+#include "../http/http_request.h"
+#include "../http/http_response.h"
 
 namespace srv {
 HttpServer::HttpServer(const std::string &address, uint16_t port) {

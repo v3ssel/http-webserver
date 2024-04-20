@@ -1,8 +1,9 @@
 #ifndef _HTTP_SERVER_H_
 #define _HTTP_SERVER_H_
 
+#include "../loggers/base_connection_logger.h"
+
 #include "tcp_server.h"
-#include "base_connection_logger.h"
 #include "resource_binder.h"
 #include "request_observer.h"
 

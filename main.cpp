@@ -1,16 +1,9 @@
 #include <iostream>
 
-#include "http_server.h"
-#include "connection_logger.h"
+#include "server_src/http_server.h"
+#include "loggers/connection_logger.h"
+#include "controllers/home_controller.h"
 
-srv::HttpResponse GetHome(const srv::HttpRequest request) {
-    std::string name = request.ContainsHeader("Name") ? request.GetHeaderValue("Name") : "World";
-
-    std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 1\n\nHello ";
-    response += name + "!";
-
-    return srv::HttpResponse::Parse(response);
-}
 
 int main(int argc, char** argv) try {
     std::string kAddress = "127.0.0.1";
@@ -24,11 +17,14 @@ int main(int argc, char** argv) try {
     if (port < 1025 || port > 65535) {
         throw std::invalid_argument("");
     }
-    
-    // srv::TcpServer srv(nullptr, kAddress, port);
-    srv::HttpServer srv(kAddress, port);
 
-    srv.Bind("/", "GET", GetHome);
+
+    srv::HttpServer srv(kAddress, port);
+    
+    srv::HomeController controller;
+    srv.Bind("/", "GET", std::bind(&srv::HomeController::GetHome, &controller, std::placeholders::_1));
+    // pass header "Name: <name>" as parameter
+    srv.Bind("/hello", "GET", std::bind(&srv::HomeController::GetHello, &controller, std::placeholders::_1));
 
     std::cout << "Starting http://" << kAddress << ":" << port << " server.\n";
     srv.Start();

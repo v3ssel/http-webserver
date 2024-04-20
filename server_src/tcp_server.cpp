@@ -1,14 +1,12 @@
 #include <stdexcept>
 #include <cstring>
 #include <cerrno>
-#include <memory>
 
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
 #include "tcp_server.h"
-#include <iostream>
 
 namespace srv {
 TcpServer::TcpServer(RequestObserver* primary_obsvr, const std::string &address, uint16_t port)
@@ -31,6 +29,7 @@ void TcpServer::Start() {
 
     is_running_ = true;
     listener_ = std::thread(&TcpServer::Listen, this);
+
     CreateEpoll();
     for (int i = 0; i < kMaxWorkers; i++) {
         workers_[i] = std::thread(&TcpServer::ProcessEvents, this, i);
@@ -42,10 +41,12 @@ void TcpServer::Stop() {
 
     is_running_ = false;
     listener_.join();
+
     for (int i = 0; i < kMaxWorkers; i++) {
         workers_[i].join();
         close(worker_fd_[i]);
     }
+
     close(server_fd_);
 }
 
@@ -165,7 +166,6 @@ void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
     }
     
     if (bytes_recv == 0) {
-        std::cout << "---------------DISCONNECTED-------------\n";
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, event_data->client_fd, nullptr);
         close(event_data->client_fd);
         delete event_data;
@@ -173,13 +173,8 @@ void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
         return;
     }
 
-    // std::cout << "---------------GOT-------------\n" << buffer << "\n";
-
     std::string client_ip = GetClientIp(event_data->client_fd);
-
-
     event_data->buffer = primary_observer_->RequestHappen(buffer, client_ip);
-    // event_data->buffer = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello bpb!\n\n";
 
     for (auto obsvr : observers_) {
         obsvr->RequestHappen(buffer, client_ip);
@@ -190,35 +185,24 @@ void TcpServer::HandleEpollInEvent(int epoll_fd, EpollEventData* event_data) {
     event.data.ptr = event_data;
 
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, event_data->client_fd, &event) != 0) {
-        throw std::runtime_error("Something wrong with Epoll Ctl in EpollIn. " + std::string(strerror(errno)));
+        throw std::runtime_error("Cant switch epoll from EpollIn to EpollOut. " + std::string(strerror(errno)));
     }
 }
 
 void TcpServer::HandleEpollOutEvent(int epoll_fd, EpollEventData* event_data) {
     ssize_t bytes_sent = send(event_data->client_fd, event_data->buffer.c_str(), event_data->buffer.length(), 0);
-    // std::cout << "---------------SENT-------------\n";
-    // std::cout << event_data->buffer;
 
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        epoll_event event;
-        event.events = EPOLLOUT;
-        event.data.ptr = event_data;
-
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_data->client_fd, &event) != 0) {
-            throw std::runtime_error("Cannot create epoll. " + std::string(strerror(errno)));
-        }
-        
         return;
     }
 
     epoll_event event;
     event.events = EPOLLIN;
-
     event_data->buffer.clear();
     event.data.ptr = event_data;
 
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, event_data->client_fd, &event) != 0) {
-        throw std::runtime_error("Something wrong with Epoll Ctl in EpollOut. " + std::string(strerror(errno)));
+        throw std::runtime_error("Cant switch epoll from EpollOut to EpollIn. " + std::string(strerror(errno)));
     }
 }
 

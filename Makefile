@@ -1,36 +1,33 @@
+PROJECTDIR = $(CURDIR)
 CXX = g++
 CXXFLAGS = -std=c++17
-PROJECTDIR = $(CURDIR)
-
-CLIENT_SOURCES = \
-	$(PROJECTDIR)/client_src/main.cpp
 
 MAIN = \
-	$(PROJECTDIR)/server_src/main.cpp 
+	$(PROJECTDIR)/main.cpp 
 
-TCP_SERVER_SOURCES = \
+SERVER_SOURCES = \
+	$(PROJECTDIR)/server_src/http_server.cpp \
 	$(PROJECTDIR)/server_src/tcp_server.cpp \
-	$(PROJECTDIR)/server_src/connection_logger.cpp
 
 HTTP_SOURCES = \
-	$(PROJECTDIR)/server_src/http_server.cpp \
-	$(PROJECTDIR)/server_src/http_message.cpp \
-	$(PROJECTDIR)/server_src/http_request.cpp \
-	$(PROJECTDIR)/server_src/http_response.cpp
+	$(PROJECTDIR)/http/http_message.cpp \
+	$(PROJECTDIR)/http/http_request.cpp \
+	$(PROJECTDIR)/http/http_response.cpp
+
+LOGGER_SOURCES = \
+	$(PROJECTDIR)/loggers/connection_logger.cpp
 
 BINDER_SOURCES = \
 	$(PROJECTDIR)/server_src/resource_binder.cpp
 
-.PHONY: http_server tcp_server client http_tests binder_tests
+CONTROLLERS_SOURCES = \
+	$(PROJECTDIR)/controllers/home_controller.cpp
 
-tcp_server:
-	$(CXX) $(CXXFLAGS) $(MAIN) $(TCP_SERVER_SOURCES) -o server
+
+.PHONY: http_server http_tests binder_tests
 
 http_server:
-	$(CXX) $(CXXFLAGS) $(MAIN) $(TCP_SERVER_SOURCES) $(HTTP_SOURCES) $(BINDER_SOURCES) -o http_server
-
-client:
-	$(CXX) $(CXXFLAGS) $(CLIENT_SOURCES) -o client
+	$(CXX) $(CXXFLAGS) $(MAIN) $(SERVER_SOURCES) $(HTTP_SOURCES) $(BINDER_SOURCES) $(LOGGER_SOURCES) $(CONTROLLERS_SOURCES) -o http_server
 
 http_tests:
 	$(CXX) $(CXXFLAGS) $(PROJECTDIR)/tests/http_message_tests.cpp $(HTTP_SOURCES) -lgtest -o http_tests

@@ -5,8 +5,8 @@
 #include <functional>
 #include <string>
 
-#include "http_request.h"
-#include "http_response.h"
+#include "../http/http_request.h"
+#include "../http/http_response.h"
 
 namespace srv {
     class ResourceBinder {

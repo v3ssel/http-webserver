@@ -20,8 +20,7 @@ ResourceBinder::ResourceBinder() {
 }
 
 void ResourceBinder::Bind(const std::string &resource_path, const std::string &method, function_handler handler) {
-    // parse query string?
-    methods_to_handlers_[resource_path][method] = handler;
+    methods_to_handlers_[resource_path.substr(0, resource_path.find('?'))][method] = handler;
 }
 
 void ResourceBinder::Unbind(const std::string &resource_path, const std::string &method) {
