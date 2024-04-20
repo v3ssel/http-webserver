@@ -20,6 +20,7 @@ int main(int argc, char** argv) try {
 
 
     srv::HttpServer srv(kAddress, port);
+    srv.SetConnectionLogger(new srv::ConnectionLogger());
     
     srv::HomeController controller;
     srv.Bind("/", "GET", std::bind(&srv::HomeController::GetHome, &controller, std::placeholders::_1));
